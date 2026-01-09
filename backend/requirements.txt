@@ -1,0 +1,9 @@
+firebase-admin
+fastapi
+uvicorn
+python-dotenv
+pydantic
+deepgram-sdk
+websockets
+google-generativeai
+requests
