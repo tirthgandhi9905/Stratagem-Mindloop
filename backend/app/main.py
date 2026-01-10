@@ -39,12 +39,12 @@ async def lifespan(app: FastAPI):
 	"""FastAPI lifespan event handler for startup/shutdown."""
 	# Startup
 	initialize_firebase()
-	logger.info('✓ Firebase Admin SDK initialized')
-	print('✓ Firebase Admin SDK initialized')
+	logger.info('[OK] Firebase Admin SDK initialized')
+	print('[OK] Firebase Admin SDK initialized')
 	yield
 	# Shutdown (cleanup if needed)
-	logger.info('✓ Application shutting down')
-	print('✓ Shutting down')
+	logger.info('[OK] Application shutting down')
+	print('[OK] Shutting down')
 
 
 app = FastAPI(
