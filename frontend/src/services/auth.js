@@ -97,6 +97,27 @@ export const verifyTokenWithBackend = async (idToken) => {
 	return response.json()
 }
 
+// Check for redirect result on page load
+export const checkRedirectResult = async () => {
+	try {
+		const result = await getRedirectResult(auth)
+		if (result) {
+			const idToken = await result.user.getIdToken()
+			return {
+				uid: result.user.uid,
+				email: result.user.email,
+				name: result.user.displayName,
+				picture: result.user.photoURL,
+				idToken,
+			}
+		}
+		return null
+	} catch (error) {
+		console.error('Redirect result error:', error)
+		return null
+	}
+}
+
 export const subscribeToAuthChanges = (callback) => {
 	return onAuthStateChanged(auth, async (user) => {
 		if (user) {

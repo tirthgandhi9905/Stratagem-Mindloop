@@ -41,6 +41,7 @@ const buildNavItems = (context) => {
 		{ label: 'Members', to: '/dashboard/members', roles: ['ADMIN'] },
 		{ label: 'Tasks', to: '/dashboard/tasks', roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] },
 		{ label: 'Calendar', to: '/dashboard/calendar', roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] },
+		{ label: 'Meetings', to: '/dashboard/meetings', roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] },
 		{ label: 'Integrations', to: '/dashboard/integrations', roles: ['ADMIN'] },
 	]
 

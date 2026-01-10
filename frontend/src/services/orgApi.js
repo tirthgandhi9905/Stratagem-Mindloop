@@ -28,11 +28,27 @@ export const authedRequest = async (path, options = {}) => {
 	}
 
 	if (!response.ok) {
-		const message = data?.detail || data?.message || 'Request failed'
+		const message = formatErrorMessage(data)
 		throw new Error(message)
 	}
 
 	return data ?? {}
+}
+
+const formatErrorMessage = (data) => {
+	if (!data) return 'Request failed'
+	const { detail, message } = data
+	if (typeof detail === 'string') return detail
+	if (Array.isArray(detail)) {
+		return detail
+			.map((item) => {
+				if (typeof item === 'string') return item
+				if (item?.msg) return item.msg
+				return JSON.stringify(item)
+			})
+			.join('; ')
+	}
+	return message || 'Request failed'
 }
 
 export const createOrganization = async ({ name, description }) => {

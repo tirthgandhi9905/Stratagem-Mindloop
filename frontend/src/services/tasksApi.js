@@ -32,3 +32,46 @@ export const completeTask = async (taskId) => {
 		method: 'POST',
 	})
 }
+
+/**
+ * Approve an AI-detected task candidate (managers only)
+ * @param {string} pendingId - The pending approval ID
+ * @param {number} taskIndex - Index of the task in candidates array
+ * @param {object} edits - Optional edits to apply to the task
+ * @param {boolean} createGithubIssue - Whether to create a GitHub issue
+ */
+export const approveTask = async (pendingId, taskIndex, edits = null, createGithubIssue = false) => {
+	return authedRequest('/tasks/approve', {
+		method: 'POST',
+		body: JSON.stringify({
+			pendingId,
+			taskIndex,
+			edits,
+			createGithubIssue,
+		}),
+	})
+}
+
+/**
+ * Reject an AI-detected task candidate (managers only)
+ * @param {string} pendingId - The pending approval ID
+ * @param {number} taskIndex - Index of the task in candidates array
+ * @param {string} reason - Optional rejection reason
+ */
+export const rejectTask = async (pendingId, taskIndex, reason = null) => {
+	return authedRequest('/tasks/reject', {
+		method: 'POST',
+		body: JSON.stringify({
+			pendingId,
+			taskIndex,
+			reason,
+		}),
+	})
+}
+
+/**
+ * Get all pending task approvals for the current manager
+ */
+export const fetchPendingApprovals = async () => {
+	return authedRequest('/tasks/pending')
+}

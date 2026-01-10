@@ -18,8 +18,12 @@ from app.api import (
 	teams,
 	extension as extension_routes,
 	meeting as meeting_routes,
+	meetings as meetings_routes,
 	slack as slack_routes,
 	tasks as tasks_routes,
+	zoom as zoom_routes,
+	zoom_sdk as zoom_sdk_routes,
+	zoom_webhook as zoom_webhook_routes,
 )
 
 # Configure logging
@@ -29,38 +33,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from app.services.task_detection_service import task_detection_service
-import json
-
-router = APIRouter()
-
-@router.websocket("/ws/meet")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    try:
-        while True:
-            # 1. Receive data from Extension
-            data = await websocket.receive_text()
-            payload = json.loads(data)
-
-            if payload.get("type") == "potential_task":
-                # 2. Real-time AI processing
-                transcript_text = payload.get("text")
-                print(f"Analyzing potential task: {transcript_text}")
-                
-                # Verify with Gemini if it's TRULY a task
-                ai_result = await task_detection_service.verify_and_extract_task(transcript_text)
-                
-                if ai_result:
-                    # 3. Send back to Client (to show Popup)
-                    await websocket.send_json({
-                        "type": "task_detected",
-                        "data": ai_result # Contains {description, assignee, priority}
-                    })
-                    
-    except WebSocketDisconnect:
-        print("Client disconnected")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -83,15 +55,26 @@ app = FastAPI(
 )
 
 # Enable CORS for frontend
-settings = get_settings()
+# settings = get_settings()
+# app.add_middleware(
+# 	CORSMiddleware,
+# 	allow_origins=settings.cors_allow_origins,
+# 	allow_origin_regex=settings.cors_allow_origin_regex,
+# 	allow_credentials=True,
+# 	allow_methods=['*'],
+# 	allow_headers=['*'],
+# )
 app.add_middleware(
-	CORSMiddleware,
-	allow_origins=settings.cors_allow_origins,
-	allow_origin_regex=settings.cors_allow_origin_regex,
-	allow_credentials=True,
-	allow_methods=['*'],
-	allow_headers=['*'],
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
+
 
 # Include routers
 app.include_router(auth.router)
@@ -101,8 +84,12 @@ app.include_router(me.router)
 app.include_router(websocket_routes.router)
 app.include_router(extension_routes.router)
 app.include_router(meeting_routes.router)
+app.include_router(meetings_routes.router)
 app.include_router(tasks_routes.router)
 app.include_router(slack_routes.router)
+app.include_router(zoom_routes.router)
+app.include_router(zoom_sdk_routes.router)
+app.include_router(zoom_webhook_routes.router)
 
 
 @app.get('/health')
