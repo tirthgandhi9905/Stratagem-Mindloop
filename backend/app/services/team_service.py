@@ -14,11 +14,11 @@ class TeamService:
 
 	VALID_TEAM_ROLES = {'MANAGER', 'EMPLOYEE'}
 
-	# Initializes the team service and ensures Firebase is ready.
+	
 	def __init__(self) -> None:
 		ensure_firebase_initialized()
 
-	# Creates a new team in the user's organization.
+	
 	async def create_team(self, *, uid: str, name: str, description: str | None) -> Dict:
 		membership = self._get_membership(uid)
 		self._require_admin(membership)
@@ -33,7 +33,7 @@ class TeamService:
 			(description or '').strip(),
 		)
 
-	# Renames an existing team.
+	
 	async def rename_team(self, *, uid: str, team_id: str, name: str, description: str | None) -> Dict:
 		membership = self._get_membership(uid)
 		self._require_admin(membership)
@@ -48,7 +48,7 @@ class TeamService:
 			(description or '').strip(),
 		)
 
-	# Deletes a team and all its memberships.
+	
 	async def delete_team(self, *, uid: str, team_id: str) -> Dict:
 		membership = self._get_membership(uid)
 		self._require_admin(membership)
@@ -58,7 +58,7 @@ class TeamService:
 			team_id,
 		)
 
-	# Adds a member to a team with a specified role.
+	
 	async def add_member(self, *, uid: str, team_id: str, target_uid: str, role: str) -> Dict:
 		membership = self._get_membership(uid)
 		self._require_admin(membership)
@@ -72,7 +72,7 @@ class TeamService:
 			uid,
 		)
 
-	# Updates a team member's role.
+	
 	async def update_member_role(self, *, uid: str, team_id: str, target_uid: str, role: str) -> Dict:
 		membership = self._get_membership(uid)
 		self._require_admin(membership)
@@ -85,7 +85,7 @@ class TeamService:
 			role_value,
 		)
 
-	# Removes a member from a team.
+	
 	async def remove_member(self, *, uid: str, team_id: str, target_uid: str) -> Dict:
 		membership = self._get_membership(uid)
 		self._require_admin(membership)
@@ -96,7 +96,7 @@ class TeamService:
 			target_uid,
 		)
 
-	# Synchronously creates a team document in Firestore.
+	
 	def _create_team_sync(self, org_id: str, creator_uid: str, name: str, description: str) -> Dict:
 		client = self._get_client()
 		team_ref = client.collection('teams').document()
@@ -116,7 +116,7 @@ class TeamService:
 			'description': description,
 		}
 
-	# Synchronously updates a team's name and description.
+	
 	def _rename_team_sync(self, org_id: str, team_id: str, name: str, description: str) -> Dict:
 		client = self._get_client()
 		team_ref = client.collection('teams').document(team_id)
@@ -135,7 +135,7 @@ class TeamService:
 			'description': description,
 		}
 
-	# Synchronously deletes a team and all its members.
+	
 	def _delete_team_sync(self, org_id: str, team_id: str) -> Dict:
 		client = self._get_client()
 		self._ensure_team_in_org(client, team_id, org_id)
@@ -150,7 +150,7 @@ class TeamService:
 		logger.info('Deleted team %s from org %s (removed %d members)', team_id, org_id, deleted_members)
 		return {'teamId': team_id, 'deleted': True, 'membersRemoved': deleted_members}
 
-	# Synchronously adds a member to a team.
+	
 	def _add_member_sync(self, org_id: str, team_id: str, target_uid: str, role: str, acting_uid: str) -> Dict:
 		client = self._get_client()
 		team_doc = self._ensure_team_in_org(client, team_id, org_id)
@@ -177,7 +177,7 @@ class TeamService:
 			'email': target_member.get('email'),
 		}
 
-	# Synchronously updates a team member's role.
+	
 	def _update_member_role_sync(self, org_id: str, team_id: str, target_uid: str, role: str) -> Dict:
 		client = self._get_client()
 		self._ensure_team_in_org(client, team_id, org_id)
@@ -196,7 +196,7 @@ class TeamService:
 			'email': member_data.get('email'),
 		}
 
-	# Synchronously removes a member from a team.
+	
 	def _remove_member_sync(self, org_id: str, team_id: str, target_uid: str) -> Dict:
 		client = self._get_client()
 		self._ensure_team_in_org(client, team_id, org_id)
@@ -208,7 +208,7 @@ class TeamService:
 		logger.info('Removed user %s from team %s', target_uid, team_id)
 		return {'teamId': team_id, 'uid': target_uid}
 
-	# Retrieves and validates the user's organization membership.
+	
 	def _get_membership(self, uid: str) -> Dict:
 		client = self._get_client()
 		docs = list(client.collection('org_members').where('uid', '==', uid).limit(1).stream())
@@ -221,12 +221,12 @@ class TeamService:
 			raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Organization membership is invalid')
 		return data
 
-	# Raises an error if the user is not an admin.
+	
 	def _require_admin(self, membership: Dict) -> None:
 		if membership.get('role') != 'ORG_ADMIN':
 			raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Administrator privileges required')
 
-	# Validates that a team belongs to the specified organization.
+	
 	def _ensure_team_in_org(self, client, team_id: str, org_id: str) -> Dict:
 		team_doc = client.collection('teams').document(team_id).get()
 		if not team_doc.exists:
@@ -236,7 +236,7 @@ class TeamService:
 			raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Team belongs to another organization')
 		return team_data
 
-	# Retrieves an organization member by ID.
+	
 	def _get_org_member(self, client, org_id: str, target_uid: str) -> Dict:
 		member_ref = client.collection('org_members').document(f'{org_id}_{target_uid}')
 		member_doc = member_ref.get()
@@ -244,21 +244,21 @@ class TeamService:
 			raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User is not part of this organization')
 		return member_doc.to_dict() or {}
 
-	# Normalizes and validates a team role.
+	
 	def _normalize_role(self, role: str) -> str:
 		value = (role or '').upper()
 		if value not in self.VALID_TEAM_ROLES:
 			raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail='Role must be MANAGER or EMPLOYEE')
 		return value
 
-	# Normalizes text by collapsing whitespace.
+	
 	@staticmethod
 	def _normalize_text(value: str | None) -> str:
 		if value is None:
 			return ''
 		return ' '.join(value.split())
 
-	# Returns the Firestore client instance.
+	
 	@staticmethod
 	def _get_client():
 		ensure_firebase_initialized()

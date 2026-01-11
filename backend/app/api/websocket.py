@@ -15,13 +15,13 @@ from app.services.websocket_manager import websocket_manager
 
 try:
 	from app.services.gemini_tasks import gemini_task_service
-except ModuleNotFoundError:  # pragma: no cover - fallback while Gemini service is absent
+except ModuleNotFoundError:  
 
 	class _GeminiTaskStub:
-		async def analyze_meeting(self, meeting_id, entries):  # pylint: disable=unused-argument
+		async def analyze_meeting(self, meeting_id, entries):  
 			return None
 
-		async def clear_meeting(self, meeting_id):  # pylint: disable=unused-argument
+		async def clear_meeting(self, meeting_id):  
 			return None
 
 	gemini_task_service = _GeminiTaskStub()
@@ -46,11 +46,11 @@ async def notification_socket(websocket: WebSocket):
 	try:
 		await websocket_manager.register(user_id, websocket)
 		while True:
-			# Keep the connection alive; no inbound messages expected
+			
 			await websocket.receive_text()
 	except WebSocketDisconnect:
 		logger.info('Notification websocket disconnected for user %s', user_id)
-	except Exception as exc:  # pragma: no cover - defensive log
+	except Exception as exc:  
 		logger.warning('Notification websocket error for user %s: %s', user_id, exc)
 	finally:
 		await websocket_manager.unregister(user_id, websocket)
@@ -74,13 +74,13 @@ async def meeting_ingestion_socket(websocket: WebSocket):
 		f'meeting_id={meeting_id}, token_present={bool(token)}'
 	)
 
-	# Validate meeting_id
+	
 	if not meeting_id:
 		logger.warning(f'WS connection rejected: missing meeting_id')
 		await websocket.close(code=1008, reason='meeting_id is required')
 		return
 
-	# Validate and verify token BEFORE accepting
+	
 	logger.info(f'WS token received for meeting {meeting_id}')
 	success, claims, error_reason = verify_firebase_token_ws(token)
 
@@ -89,7 +89,7 @@ async def meeting_ingestion_socket(websocket: WebSocket):
 		await websocket.close(code=1008, reason=error_reason)
 		return
 
-	# Only now accept the connection after successful auth
+	
 	await websocket.accept()
 
 	uid = claims.get('uid', 'unknown')
@@ -129,7 +129,7 @@ async def meeting_ingestion_socket(websocket: WebSocket):
 				except Exception as exc:
 					logger.warning('Failed to send final transcript buffer update for meeting %s: %s', meeting_id, exc)
 		else:
-			# Also buffer partial transcripts so Gemini has content to analyze
+			
 			timestamp = transcript_payload.get('timestamp')
 			if not isinstance(timestamp, int):
 				timestamp = int(time.time() * 1000)
@@ -157,13 +157,13 @@ async def meeting_ingestion_socket(websocket: WebSocket):
 
 	try:
 		while True:
-			# Receive message from client
+			
 			message_text = await websocket.receive_text()
 
 			if message_text == 'ping':
 				continue
 
-			# Parse JSON payload
+			
 			payload: dict[str, Any]
 			try:
 				payload = json.loads(message_text)
@@ -171,7 +171,7 @@ async def meeting_ingestion_socket(websocket: WebSocket):
 				logger.warning(f'WS malformed JSON for meeting {meeting_id}: {err}')
 				continue
 
-			# Extract fields
+			
 			timestamp = payload.get('timestamp')
 			if timestamp is None:
 				logger.warning(f'WS missing timestamp for meeting {meeting_id}')
@@ -181,7 +181,7 @@ async def meeting_ingestion_socket(websocket: WebSocket):
 			caption_text = payload.get('caption_text', '')
 			speaker_name = payload.get('speaker_name', 'Unknown')
 
-			# Log the ingested message
+			
 			if caption_text:
 				logger.info(
 					f'WS ingested | meeting={meeting_id} uid={uid} '
@@ -291,7 +291,7 @@ async def meeting_ingestion_socket(websocket: WebSocket):
 		await transcript_buffer_service.clear_meeting(meeting_id)
 		await gemini_task_service.clear_meeting(meeting_id)
 
-		# Clean close
+		
 		if websocket.client_state == WebSocketState.CONNECTED:
 			try:
 				await websocket.close(code=1000, reason='Server closing')

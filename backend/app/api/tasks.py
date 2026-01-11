@@ -40,9 +40,9 @@ class TaskResponse(BaseModel):
 	createdByEmail: str | None = None
 
 
-# ==========================================
-# TASK APPROVAL MODELS
-# ==========================================
+
+
+
 
 class TaskCandidateEdit(BaseModel):
 	title: str | None = None
@@ -127,9 +127,9 @@ class PendingApproval(BaseModel):
 	createdAt: str | None = None
 
 
-# ==========================================
-# ORIGINAL TASK ENDPOINTS
-# ==========================================
+
+
+
 
 @router.post('/create', response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
 async def create_task(request: TaskCreateRequest, current_user: dict = Depends(get_current_user)):
@@ -182,9 +182,9 @@ async def complete_task(
 	return TaskResponse(**task)
 
 
-# ==========================================
-# TASK APPROVAL ENDPOINTS
-# ==========================================
+
+
+
 
 @router.post('/approve', response_model=TaskApproveResponse)
 async def approve_task(
@@ -289,9 +289,9 @@ async def list_pending_approvals(
 	return [PendingApproval(**p) for p in result]
 
 
-# ==========================================
-# HELPERS
-# ==========================================
+
+
+
 
 async def _get_user_org_id(current_user: dict) -> str:
 	"""Get the organization ID for the current user."""

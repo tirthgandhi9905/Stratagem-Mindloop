@@ -22,25 +22,25 @@ class ZoomService:
 	TOKEN_URL = 'https://zoom.us/oauth/token'
 	CREATE_MEETING_URL = 'https://api.zoom.us/v2/users/me/meetings'
 
-	# Initializes the Zoom service with token cache.
+	
 	def __init__(self) -> None:
 		ensure_firebase_initialized()
 		self._access_token: Optional[str] = None
 		self._token_expiry_ts: float = 0.0
 
-	# Returns the Firestore client instance.
+	
 	def _get_client(self):
 		ensure_firebase_initialized()
 		return firestore.client()
 
-	# Generates the Basic auth header for Zoom OAuth.
+	
 	def _basic_auth_header(self) -> str:
 		if not ZOOM_CLIENT_ID or not ZOOM_CLIENT_SECRET:
 			raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail='Zoom client credentials are not configured')
 		creds = f"{ZOOM_CLIENT_ID}:{ZOOM_CLIENT_SECRET}".encode('utf-8')
 		return 'Basic ' + base64.b64encode(creds).decode('utf-8')
 
-	# Fetches a new OAuth token from Zoom.
+	
 	def _fetch_token(self) -> None:
 		if not ZOOM_ACCOUNT_ID:
 			raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail='Zoom account id is not configured')
@@ -61,14 +61,14 @@ class ZoomService:
 		self._token_expiry_ts = time.time() + max(expires_in - 30.0, 0.0)
 		logger.info('Obtained Zoom token; expires in %ss', int(expires_in))
 
-	# Returns a valid access token, refreshing if needed.
+	
 	def _get_token(self) -> str:
 		if self._access_token and time.time() < self._token_expiry_ts:
 			return self._access_token
 		self._fetch_token()
 		return self._access_token or ''
 
-	# Retrieves the user's organization and team context.
+	
 	def _get_user_org_context(self, uid: str) -> Dict:
 		client = self._get_client()
 		membership_docs = list(client.collection('org_members').where('uid', '==', uid).limit(1).stream())
@@ -97,7 +97,7 @@ class ZoomService:
 			'memberTeamIds': list(member_team_ids),
 		}
 
-	# Validates that the user is an admin or manager of the team.
+	
 	def _require_admin_or_manager(self, uid: str, team_id: Optional[str]) -> Dict:
 		ctx = self._get_user_org_context(uid)
 		if ctx['role'] == 'ORG_ADMIN':
@@ -106,7 +106,7 @@ class ZoomService:
 			return ctx
 		raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Only admins or team managers can create Zoom meetings')
 
-	# Parses and normalizes an ISO 8601 start time string.
+	
 	@staticmethod
 	def _parse_start_time(value: str) -> str:
 		try:
@@ -118,7 +118,7 @@ class ZoomService:
 			logger.exception('Failed to parse start time value=%s', value)
 			raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail='startTime must be a valid ISO 8601 string')
 
-	# Creates a Zoom meeting and persists it to Firestore.
+	
 	def create_meeting(self, *, uid: str, team_id: str, topic: str, start_time: str, duration_minutes: int) -> Dict:
 		logger.info('Zoom meeting create requested uid=%s team=%s startTime=%s duration=%s', uid, team_id, start_time, duration_minutes)
 		ctx = self._require_admin_or_manager(uid, team_id)
@@ -172,7 +172,7 @@ class ZoomService:
 		logger.info('Zoom meeting %s created (zoom id=%s) for org %s team %s', meeting_id, zoom_meeting_id, org_id, team_id)
 		return {**doc, 'createdAt': now_iso}
 
-	# Serializes a timestamp value to ISO string.
+	
 	@staticmethod
 	def _serialize_timestamp(value):
 		if value is None:
@@ -185,7 +185,7 @@ class ZoomService:
 			return value.astimezone(timezone.utc).isoformat()
 		return value
 
-	# Serializes a meeting document for API response.
+	
 	def _serialize_meeting_doc(self, data: Dict) -> Dict:
 		result = dict(data)
 		for key in ('createdAt', 'startedAt', 'endedAt', 'startTime'):
@@ -195,7 +195,7 @@ class ZoomService:
 			result['status'] = 'SCHEDULED'
 		return result
 
-	# Lists meetings visible to the user based on their role.
+	
 	def list_meetings_for_user(self, uid: str, limit: int = 50) -> list[Dict]:
 		logger.info('Listing meetings for uid=%s', uid)
 		ctx = self._get_user_org_context(uid)

@@ -144,7 +144,7 @@ class TaskService:
 			due_date = self._parse_due_date(due_date_value)
 
 		create_github_issue = bool(payload.get('createGithubIssue'))
-		target_repo_id = payload.get('targetGithubRepoId')  # Optional target repo ID
+		target_repo_id = payload.get('targetGithubRepoId')  
 
 		return self._create_task_sync(
 			client=client,
@@ -292,7 +292,7 @@ class TaskService:
 			'dueDate': due_date,
 		}
 		
-		# Store target repo ID if provided
+		
 		if target_repo_id:
 			payload['githubRepoId'] = target_repo_id
 		
@@ -337,14 +337,14 @@ class TaskService:
 		integrations = self._get_org_integrations(client, org_id)
 		github_config = integrations.get('github') or {}
 		
-		# Check if using new multi-repo format
+		
 		repositories = github_config.get('repositories')
 		if repositories and isinstance(repositories, list):
-			# Multi-repo format
+			
 			target_repo = None
 			
 			if target_repo_id:
-				# Find specific repo by ID
+				
 				for repo_entry in repositories:
 					if repo_entry.get('id') == target_repo_id:
 						target_repo = repo_entry
@@ -354,13 +354,13 @@ class TaskService:
 					logger.warning('Target repo %s not found for org %s', target_repo_id, org_id)
 					return None
 			else:
-				# Use default repo
+				
 				for repo_entry in repositories:
 					if repo_entry.get('isDefault'):
 						target_repo = repo_entry
 						break
 				
-				# If no default, use first repo
+				
 				if not target_repo and len(repositories) > 0:
 					target_repo = repositories[0]
 			
@@ -371,10 +371,10 @@ class TaskService:
 			repo = target_repo.get('repo')
 			org_token = target_repo.get('token')
 		else:
-			# Legacy single-repo format (backward compatibility)
+			
 			repo = github_config.get('repo')
 			
-			# Fall back to default repo if not configured
+			
 			if not repo and DEFAULT_GITHUB_REPO:
 				repo = DEFAULT_GITHUB_REPO
 				self._merge_org_integration(client, org_id, {'github': {'repo': repo}})
@@ -389,7 +389,7 @@ class TaskService:
 		body += f"Assigned to: {assignee_email or 'Unassigned'}\n\n"
 		body += description or 'No description provided.'
 
-		# Use org-specific token if available, otherwise use default from env
+		
 		return create_issue(repo, title or 'Meeting task', body, token=org_token)
 
 	def _serialize_task(self, task_id: str, data: Dict) -> Dict:

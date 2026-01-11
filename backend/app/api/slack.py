@@ -72,7 +72,7 @@ async def handle_slack_command(request: Request):
 		message = exc.detail or 'Unable to create task.'
 		logger.warning('Slack command failed: %s', message)
 		return PlainTextResponse(message)
-	except Exception as exc:  # noqa: BLE001
+	except Exception as exc:  
 		logger.exception('Unexpected Slack command error: %s', exc)
 		return PlainTextResponse('Something went wrong while creating the task.')
 

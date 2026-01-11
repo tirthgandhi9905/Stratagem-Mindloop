@@ -45,7 +45,7 @@ async def create_zoom_meeting(request: CreateZoomMeetingRequest, current_user: d
 			duration_minutes=request.durationMinutes,
 		)
 		return ZoomMeetingResponse(**result)
-	except Exception as exc:  # log and re-raise to inspect root cause in uvicorn output
+	except Exception as exc:  
 		logger.exception('Failed to create Zoom meeting for uid=%s: %s', uid, getattr(exc, 'detail', str(exc)))
 		raise
 

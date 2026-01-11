@@ -16,7 +16,7 @@ def create_issue(repo: str, title: str, body: str, token: Optional[str] = None) 
 		logger.warning('Cannot create GitHub issue: repo is missing')
 		return None
 
-	# Use provided token, or fall back to environment variable
+	
 	if not token:
 		token = os.getenv('GITHUB_TOKEN')
 	

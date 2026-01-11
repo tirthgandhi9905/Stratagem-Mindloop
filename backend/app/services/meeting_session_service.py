@@ -11,13 +11,13 @@ logger = logging.getLogger(__name__)
 
 class Participant:
 
-	# Initializes a participant with Zoom user ID, display name, and join time.
+	
 	def __init__(self, zoom_user_id: str, display_name: str, join_time: datetime):
 		self.zoom_user_id = zoom_user_id
 		self.display_name = display_name
 		self.join_time = join_time
 
-	# Converts participant data to a dictionary.
+	
 	def to_dict(self) -> Dict:
 		return {
 			'zoomUserId': self.zoom_user_id,
@@ -28,7 +28,7 @@ class Participant:
 
 class MeetingSession:
 
-	# Initializes a meeting session with IDs and start time.
+	
 	def __init__(self, meeting_id: str, org_id: str, team_id: str, started_at: datetime):
 		self.meeting_id = meeting_id
 		self.org_id = org_id
@@ -36,7 +36,7 @@ class MeetingSession:
 		self.started_at = started_at
 		self.participants: List[Participant] = []
 
-	# Adds a participant to the session, avoiding duplicates.
+	
 	def add_participant(self, zoom_user_id: str, display_name: str) -> None:
 		if any(p.zoom_user_id == zoom_user_id for p in self.participants):
 			logger.info('Participant %s already in session %s', zoom_user_id, self.meeting_id)
@@ -45,7 +45,7 @@ class MeetingSession:
 		self.participants.append(participant)
 		logger.info('Added participant %s to meeting session %s', display_name, self.meeting_id)
 
-	# Converts session data to a dictionary.
+	
 	def to_dict(self) -> Dict:
 		return {
 			'meetingId': self.meeting_id,
@@ -58,17 +58,17 @@ class MeetingSession:
 
 class MeetingSessionService:
 
-	# Initializes the in-memory session store and Firebase.
+	
 	def __init__(self) -> None:
 		ensure_firebase_initialized()
 		self._sessions: Dict[str, MeetingSession] = {}
 
-	# Returns the Firestore client instance.
+	
 	def _get_client(self):
 		ensure_firebase_initialized()
 		return firestore.client()
 
-	# Creates and stores an in-memory session for a meeting.
+	
 	def start_session(self, meeting_id: str, zoom_meeting_id: str, org_id: str, team_id: str) -> MeetingSession:
 		now = datetime.now(timezone.utc)
 		key = str(zoom_meeting_id)
@@ -77,11 +77,11 @@ class MeetingSessionService:
 		logger.info('Started session for meeting %s (zoom=%s)', meeting_id, key)
 		return session
 
-	# Retrieves an active session by Zoom meeting ID.
+	
 	def get_session(self, zoom_meeting_id: str) -> Optional[MeetingSession]:
 		return self._sessions.get(str(zoom_meeting_id))
 
-	# Adds a participant to an active session.
+	
 	def add_participant(self, zoom_meeting_id: str, zoom_user_id: str, display_name: str) -> None:
 		session = self._sessions.get(str(zoom_meeting_id))
 		if not session:
@@ -89,14 +89,14 @@ class MeetingSessionService:
 			return
 		session.add_participant(zoom_user_id, display_name)
 
-	# Destroys an in-memory session and returns it.
+	
 	def end_session(self, zoom_meeting_id: str) -> Optional[MeetingSession]:
 		session = self._sessions.pop(str(zoom_meeting_id), None)
 		if session:
 			logger.info('Ended session for meeting %s', session.meeting_id)
 		return session
 
-	# Finds and updates a Firestore meeting status by Zoom meeting ID.
+	
 	def update_firestore_meeting_status(self, zoom_meeting_id: str, status: str) -> None:
 		client = self._get_client()
 		zoom_id_str = str(zoom_meeting_id)

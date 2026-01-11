@@ -24,23 +24,23 @@ def _parse_github_repo(repo_input: str) -> str:
 	"""
 	repo = repo_input.strip()
 	
-	# Remove .git suffix if present
+	
 	if repo.endswith('.git'):
 		repo = repo[:-4]
 	
-	# Handle HTTPS URL: https://github.com/owner/repo
+	
 	https_match = re.match(r'https?://github\.com/([^/]+)/([^/]+)', repo)
 	if https_match:
 		owner, repo_name = https_match.groups()
 		return f"{owner}/{repo_name}"
 	
-	# Handle SSH URL: git@github.com:owner/repo
+	
 	ssh_match = re.match(r'git@github\.com:([^/]+)/(.+)', repo)
 	if ssh_match:
 		owner, repo_name = ssh_match.groups()
 		return f"{owner}/{repo_name}"
 	
-	# Handle owner/repo format directly
+	
 	if '/' in repo and repo.count('/') == 1:
 		parts = repo.split('/')
 		if parts[0] and parts[1]:
@@ -58,11 +58,11 @@ def _migrate_to_multi_repo(client, org_id: str, github_data: dict) -> dict:
 	Old format: {'repo': 'owner/repo', 'token': 'xxx'}
 	New format: {'repositories': [{'id': 'uuid', 'name': 'Repo', 'repo': 'owner/repo', ...}]}
 	"""
-	# Check if already in new format
+	
 	if 'repositories' in github_data and isinstance(github_data['repositories'], list):
 		return github_data
 	
-	# Migrate old format to new format
+	
 	if 'repo' in github_data:
 		repo_id = str(uuid.uuid4())
 		repo_value = github_data['repo']
@@ -84,13 +84,13 @@ def _migrate_to_multi_repo(client, org_id: str, github_data: dict) -> dict:
 			'repositories': [new_repo]
 		}
 		
-		# Update database with new format
+		
 		integrations_ref = client.collection('org_integrations').document(org_id)
 		integrations_ref.set({'github': new_format}, merge=True)
 		
 		return new_format
 	
-	# No repos configured
+	
 	return {'repositories': []}
 
 
@@ -173,7 +173,7 @@ async def get_integrations(current_user: dict = Depends(get_current_user)):
 	if not uid:
 		raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Authentication required')
 	
-	# Get user's org membership
+	
 	client = firestore.client()
 	member_query = client.collection('org_members').where('uid', '==', uid).limit(1)
 	members = list(member_query.stream())
@@ -187,11 +187,11 @@ async def get_integrations(current_user: dict = Depends(get_current_user)):
 	if not org_id:
 		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Organization ID not found')
 	
-	# Get org integrations
+	
 	integrations_doc = client.collection('org_integrations').document(org_id).get()
 	integrations_data = integrations_doc.to_dict() or {}
 	
-	# Auto-migrate GitHub integration to multi-repo format if needed
+	
 	github_data = integrations_data.get('github')
 	if github_data:
 		github_data = _migrate_to_multi_repo(client, org_id, github_data)
@@ -213,10 +213,10 @@ async def update_github_integration(
 	if not uid:
 		raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Authentication required')
 	
-	# Parse and validate GitHub repo (supports both URL and owner/repo format)
+	
 	repo = _parse_github_repo(request.githubRepo)
 	
-	# Get user's org membership and verify admin privileges
+	
 	client = firestore.client()
 	member_query = client.collection('org_members').where('uid', '==', uid).limit(1)
 	members = list(member_query.stream())
@@ -228,14 +228,14 @@ async def update_github_integration(
 	org_id = member_data.get('orgId')
 	role = member_data.get('role')
 	
-	# Check if user is admin
+	
 	if role != 'ORG_ADMIN':
 		raise HTTPException(
 			status_code=status.HTTP_403_FORBIDDEN,
 			detail='Only organization admins can update integrations'
 		)
 	
-	# Update org integrations
+	
 	integration_data = {
 		'github': {
 			'repo': repo,
@@ -244,7 +244,7 @@ async def update_github_integration(
 		}
 	}
 	
-	# Only store token if provided (optional for public repos)
+	
 	if request.githubToken:
 		integration_data['github']['token'] = request.githubToken
 	
@@ -268,10 +268,10 @@ async def add_github_repository(
 	if not uid:
 		raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Authentication required')
 	
-	# Parse and validate GitHub repo
+	
 	repo = _parse_github_repo(request.githubRepo)
 	
-	# Get user's org membership and verify admin privileges
+	
 	client = firestore.client()
 	member_query = client.collection('org_members').where('uid', '==', uid).limit(1)
 	members = list(member_query.stream())
@@ -283,25 +283,25 @@ async def add_github_repository(
 	org_id = member_data.get('orgId')
 	role = member_data.get('role')
 	
-	# Check if user is admin
+	
 	if role != 'ORG_ADMIN':
 		raise HTTPException(
 			status_code=status.HTTP_403_FORBIDDEN,
 			detail='Only organization admins can update integrations'
 		)
 	
-	# Get current integrations
+	
 	integrations_ref = client.collection('org_integrations').document(org_id)
 	integrations_doc = integrations_ref.get()
 	integrations_data = integrations_doc.to_dict() or {}
 	github_data = integrations_data.get('github', {})
 	
-	# Auto-migrate if needed
+	
 	github_data = _migrate_to_multi_repo(client, org_id, github_data)
 	
 	repositories = github_data.get('repositories', [])
 	
-	# Check if repo already exists
+	
 	for existing_repo in repositories:
 		if existing_repo.get('repo') == repo:
 			raise HTTPException(
@@ -309,7 +309,7 @@ async def add_github_repository(
 				detail='This repository is already added'
 			)
 	
-	# Create new repository entry
+	
 	repo_id = str(uuid.uuid4())
 	new_repo = {
 		'id': repo_id,
@@ -323,17 +323,17 @@ async def add_github_repository(
 	if request.githubToken:
 		new_repo['token'] = request.githubToken
 	
-	# If setting as default, unset other defaults
+	
 	if request.isDefault:
 		for r in repositories:
 			r['isDefault'] = False
-	# If this is the first repo, make it default
+	
 	elif len(repositories) == 0:
 		new_repo['isDefault'] = True
 	
 	repositories.append(new_repo)
 	
-	# Update database
+	
 	integrations_ref.set({
 		'github': {
 			'repositories': repositories
@@ -358,7 +358,7 @@ async def delete_github_repository(
 	if not uid:
 		raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Authentication required')
 	
-	# Get user's org membership and verify admin privileges
+	
 	client = firestore.client()
 	member_query = client.collection('org_members').where('uid', '==', uid).limit(1)
 	members = list(member_query.stream())
@@ -370,25 +370,25 @@ async def delete_github_repository(
 	org_id = member_data.get('orgId')
 	role = member_data.get('role')
 	
-	# Check if user is admin
+	
 	if role != 'ORG_ADMIN':
 		raise HTTPException(
 			status_code=status.HTTP_403_FORBIDDEN,
 			detail='Only organization admins can update integrations'
 		)
 	
-	# Get current integrations
+	
 	integrations_ref = client.collection('org_integrations').document(org_id)
 	integrations_doc = integrations_ref.get()
 	integrations_data = integrations_doc.to_dict() or {}
 	github_data = integrations_data.get('github', {})
 	
-	# Auto-migrate if needed
+	
 	github_data = _migrate_to_multi_repo(client, org_id, github_data)
 	
 	repositories = github_data.get('repositories', [])
 	
-	# Find and remove the repository
+	
 	repo_to_delete = None
 	new_repositories = []
 	for repo in repositories:
@@ -403,11 +403,11 @@ async def delete_github_repository(
 			detail='Repository not found'
 		)
 	
-	# If deleting the default repo and others exist, set first one as default
+	
 	if repo_to_delete.get('isDefault') and len(new_repositories) > 0:
 		new_repositories[0]['isDefault'] = True
 	
-	# Update database
+	
 	integrations_ref.set({
 		'github': {
 			'repositories': new_repositories
@@ -430,7 +430,7 @@ async def set_default_github_repository(
 	if not uid:
 		raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Authentication required')
 	
-	# Get user's org membership and verify admin privileges
+	
 	client = firestore.client()
 	member_query = client.collection('org_members').where('uid', '==', uid).limit(1)
 	members = list(member_query.stream())
@@ -442,25 +442,25 @@ async def set_default_github_repository(
 	org_id = member_data.get('orgId')
 	role = member_data.get('role')
 	
-	# Check if user is admin
+	
 	if role != 'ORG_ADMIN':
 		raise HTTPException(
 			status_code=status.HTTP_403_FORBIDDEN,
 			detail='Only organization admins can update integrations'
 		)
 	
-	# Get current integrations
+	
 	integrations_ref = client.collection('org_integrations').document(org_id)
 	integrations_doc = integrations_ref.get()
 	integrations_data = integrations_doc.to_dict() or {}
 	github_data = integrations_data.get('github', {})
 	
-	# Auto-migrate if needed
+	
 	github_data = _migrate_to_multi_repo(client, org_id, github_data)
 	
 	repositories = github_data.get('repositories', [])
 	
-	# Find the repository and set as default
+	
 	repo_found = False
 	for repo in repositories:
 		if repo.get('id') == request.repoId:
@@ -475,7 +475,7 @@ async def set_default_github_repository(
 			detail='Repository not found'
 		)
 	
-	# Update database
+	
 	integrations_ref.set({
 		'github': {
 			'repositories': repositories

@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
-# Load environment variables from .env file BEFORE importing modules that need them
+
 load_dotenv()
 
 from app.core.config import get_settings
@@ -27,7 +27,7 @@ from app.api import (
 	zoom_ai as zoom_ai_routes,
 )
 
-# Configure logging
+
 logging.basicConfig(
 	level=logging.INFO,
 	format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -38,12 +38,12 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
 	"""FastAPI lifespan event handler for startup/shutdown."""
-	# Startup
+	
 	initialize_firebase()
 	logger.info('[OK] Firebase Admin SDK initialized')
 	print('[OK] Firebase Admin SDK initialized')
 	yield
-	# Shutdown (cleanup if needed)
+	
 	logger.info('[OK] Application shutting down')
 	print('[OK] Shutting down')
 
@@ -55,16 +55,16 @@ app = FastAPI(
 	lifespan=lifespan,
 )
 
-# Enable CORS for frontend
-# settings = get_settings()
-# app.add_middleware(
-# 	CORSMiddleware,
-# 	allow_origins=settings.cors_allow_origins,
-# 	allow_origin_regex=settings.cors_allow_origin_regex,
-# 	allow_credentials=True,
-# 	allow_methods=['*'],
-# 	allow_headers=['*'],
-# )
+
+
+
+
+
+
+
+
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -77,7 +77,7 @@ app.add_middleware(
 )
 
 
-# Include routers
+
 app.include_router(auth.router)
 app.include_router(org.router)
 app.include_router(teams.router)

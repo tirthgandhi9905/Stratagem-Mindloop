@@ -21,14 +21,14 @@ async def zoom_webhook(request: Request):
 	"""
 	body = await request.json()
 
-	# Handle webhook validation challenge
+	
 	if body.get('type') == 'url_validation':
 		challenge = body.get('challenge')
 		if challenge:
 			logger.info('Zoom webhook validation challenge received')
 			return {'challenge': challenge}
 
-	# Extract event data
+	
 	event_type = body.get('event')
 	payload = body.get('payload') or {}
 	object_data = payload.get('object') or {}
@@ -42,7 +42,7 @@ async def zoom_webhook(request: Request):
 			_handle_meeting_ended(object_data)
 		else:
 			logger.info('Zoom webhook %s (no handler)', event_type)
-	except Exception as exc:  # noqa: BLE001
+	except Exception as exc:  
 		logger.exception('Error processing Zoom webhook %s: %s', event_type, exc)
 
 	return {'status': 'ok'}
@@ -57,10 +57,10 @@ def _handle_meeting_started(object_data: dict) -> None:
 	zoom_meeting_id = str(zoom_meeting_id_raw)
 	logger.info('Zoom meeting %s started (type=%s)', zoom_meeting_id, type(zoom_meeting_id_raw).__name__)
 
-	# Update Firestore meeting status
+	
 	meeting_session_service.update_firestore_meeting_status(zoom_meeting_id, 'ACTIVE')
 
-	# Find Firestore meeting to initialize session
+	
 	from app.core.security import ensure_firebase_initialized
 	from firebase_admin import firestore
 
@@ -81,11 +81,11 @@ def _handle_meeting_started(object_data: dict) -> None:
 		org_id = meeting_doc.get('orgId')
 		team_id = meeting_doc.get('teamId')
 
-		# Start in-memory session
+		
 		if meeting_id and org_id and team_id:
 			meeting_session_service.start_session(meeting_id, zoom_meeting_id, org_id, team_id)
 
-		# Emit START_BOT event to trigger auto-spawn of bot client
+		
 		if meeting_id and org_id:
 			import asyncio
 			asyncio.create_task(_emit_start_bot_event(meeting_id, zoom_meeting_id, org_id, team_id))
@@ -103,7 +103,7 @@ async def _emit_start_bot_event(meeting_id: str, zoom_meeting_id: str, org_id: s
 		ensure_firebase_initialized()
 		client = firestore.client()
 
-		# Get all org members to notify
+		
 		org_members = client.collection('org_members').where('orgId', '==', org_id).stream()
 		
 		payload = {
@@ -156,10 +156,10 @@ def _handle_meeting_ended(object_data: dict) -> None:
 	zoom_meeting_id = str(zoom_meeting_id_raw)
 	logger.info('Zoom meeting %s ended (type=%s)', zoom_meeting_id, type(zoom_meeting_id_raw).__name__)
 
-	# Update Firestore meeting status
+	
 	meeting_session_service.update_firestore_meeting_status(zoom_meeting_id, 'ENDED')
 
-	# Find Firestore meeting for summary and bot shutdown
+	
 	from app.core.security import ensure_firebase_initialized
 	from firebase_admin import firestore
 
@@ -182,14 +182,14 @@ def _handle_meeting_ended(object_data: dict) -> None:
 
 		if meeting_id and org_id:
 			import asyncio
-			# Emit STOP_BOT event to shut down bot clients
+			
 			asyncio.create_task(_emit_stop_bot_event(meeting_id, zoom_meeting_id, org_id))
-			# Generate meeting summary
+			
 			asyncio.create_task(_generate_meeting_summary(meeting_id, org_id))
 	else:
 		logger.warning('No Firestore meeting found for zoom id %s during end', zoom_meeting_id)
 
-	# Destroy in-memory session
+	
 	meeting_session_service.end_session(zoom_meeting_id)
 
 
@@ -203,7 +203,7 @@ async def _emit_stop_bot_event(meeting_id: str, zoom_meeting_id: str, org_id: st
 		ensure_firebase_initialized()
 		client = firestore.client()
 
-		# Get all org members to notify
+		
 		org_members = client.collection('org_members').where('orgId', '==', org_id).stream()
 		
 		payload = {
@@ -230,10 +230,10 @@ async def _generate_meeting_summary(meeting_id: str, org_id: str) -> None:
 	from app.services.meeting_transcript_service import meeting_transcript_service
 
 	try:
-		# Mark meeting as completed and generate summary
+		
 		result = await meeting_transcript_service.end_meeting(
 			meeting_id=meeting_id,
-			user_id='system',  # System-generated
+			user_id='system',  
 			org_id=org_id,
 			generate_summary=True,
 		)

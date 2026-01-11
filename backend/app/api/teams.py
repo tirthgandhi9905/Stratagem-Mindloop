@@ -29,7 +29,7 @@ class TeamMemberRequest(BaseModel):
 	role: str = Field(...)
 
 	@validator('role')
-	def validate_role(cls, value):  # pylint: disable=no-self-argument
+	def validate_role(cls, value):  
 		upper_value = (value or '').upper()
 		if upper_value not in {'MANAGER', 'EMPLOYEE'}:
 			raise ValueError('Role must be MANAGER or EMPLOYEE')
